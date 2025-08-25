@@ -2,6 +2,7 @@ local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui", 10)
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character and character:WaitForChild("Humanoid", 10)
+local userInputService = game:GetService("UserInputService")
 
 -- Проверка на наличие необходимых объектов
 if not playerGui or not character or not humanoid then
@@ -17,7 +18,7 @@ screenGui.ResetOnSpawn = false
 
 -- Создаем основной фрейм
 local mainFrame = Instance.new("Frame")
-local frameWidth, frameHeight = 250, 400
+local frameWidth, frameHeight = 250, 480 -- Увеличена высота для слайдера Fly Speed
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, frameWidth, 0, frameHeight)
 mainFrame.Position = UDim2.new(0.5, -frameWidth/2, 0.5, -frameHeight/2)
@@ -182,11 +183,61 @@ local noclipCorner = Instance.new("UICorner")
 noclipCorner.CornerRadius = UDim.new(0, 2)
 noclipCorner.Parent = noclipButton
 
+-- Кнопка Fly
+local flyButton = Instance.new("TextButton")
+flyButton.Name = "FlyButton"
+flyButton.Size = UDim2.new(0.9, 0, 0, 30)
+flyButton.Position = UDim2.new(0.05, 0, 0.53, 0)
+flyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+flyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+flyButton.Text = "Fly: Off"
+flyButton.Font = Enum.Font.Roboto
+flyButton.TextSize = 12
+flyButton.Parent = mainFrame
+
+local flyCorner = Instance.new("UICorner")
+flyCorner.CornerRadius = UDim.new(0, 2)
+flyCorner.Parent = flyButton
+
+-- Слайдер для скорости полёта
+local flySpeedLabel = Instance.new("TextLabel")
+flySpeedLabel.Name = "FlySpeedLabel"
+flySpeedLabel.Size = UDim2.new(0.9, 0, 0, 20)
+flySpeedLabel.Position = UDim2.new(0.05, 0, 0.58, 0)
+flySpeedLabel.BackgroundTransparency = 1
+flySpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+flySpeedLabel.Text = "Fly Speed: 50"
+flySpeedLabel.Font = Enum.Font.Roboto
+flySpeedLabel.TextSize = 12
+flySpeedLabel.Parent = mainFrame
+
+local flySpeedSliderFrame = Instance.new("Frame")
+flySpeedSliderFrame.Name = "FlySpeedSliderFrame"
+flySpeedSliderFrame.Size = UDim2.new(0.9, 0, 0, 10)
+flySpeedSliderFrame.Position = UDim2.new(0.05, 0, 0.63, 0)
+flySpeedSliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+flySpeedSliderFrame.Parent = mainFrame
+
+local flySpeedSliderBar = Instance.new("Frame")
+flySpeedSliderBar.Name = "FlySpeedSliderBar"
+flySpeedSliderBar.Size = UDim2.new(0.2, 0, 1, 0)
+flySpeedSliderBar.Position = UDim2.new(0.2, 0, 0, 0)
+flySpeedSliderBar.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+flySpeedSliderBar.Parent = flySpeedSliderFrame
+
+local flySpeedSliderCorner = Instance.new("UICorner")
+flySpeedSliderCorner.CornerRadius = UDim.new(0, 2)
+flySpeedSliderCorner.Parent = flySpeedSliderFrame
+
+local flySpeedSliderBarCorner = Instance.new("UICorner")
+flySpeedSliderBarCorner.CornerRadius = UDim.new(0, 2)
+flySpeedSliderBarCorner.Parent = flySpeedSliderBar
+
 -- Кнопка сохранения позиции
 local savePositionButton = Instance.new("TextButton")
 savePositionButton.Name = "SavePositionButton"
 savePositionButton.Size = UDim2.new(0.9, 0, 0, 30)
-savePositionButton.Position = UDim2.new(0.05, 0, 0.58, 0)
+savePositionButton.Position = UDim2.new(0.05, 0, 0.71, 0)
 savePositionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
 savePositionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 savePositionButton.Text = "Save Position"
@@ -202,7 +253,7 @@ savePositionCorner.Parent = savePositionButton
 local teleportButton = Instance.new("TextButton")
 teleportButton.Name = "TeleportButton"
 teleportButton.Size = UDim2.new(0.9, 0, 0, 30)
-teleportButton.Position = UDim2.new(0.05, 0, 0.66, 0)
+teleportButton.Position = UDim2.new(0.05, 0, 0.79, 0)
 teleportButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
 teleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 teleportButton.Text = "Teleport to Saved"
@@ -230,7 +281,11 @@ watermark.Parent = mainFrame
 
 local noclipActive = false
 local noclipConnection
+local flyActive = false
+local flyVelocity
+local flyGyro
 local savedPosition = nil
+local flySpeed = 50 -- По умолчанию 50
 
 -- Информационный текст
 local infoText = Instance.new("TextLabel")
@@ -250,7 +305,7 @@ local function showMessage(text, color)
     local message = Instance.new("TextLabel")
     message.Name = "TempMessage"
     message.Size = UDim2.new(0.9, 0, 0, 20)
-    message.Position = UDim2.new(0.05, 0, 0.76, 0)
+    message.Position = UDim2.new(0.05, 0, 0.77, 0)
     message.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
     message.TextColor3 = color or Color3.fromRGB(255, 255, 255)
     message.Text = text
@@ -283,7 +338,7 @@ local function makeSlider(sliderFrame, sliderBar, valueLabel, applyFunction, max
         end
     end)
     
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
+    userInputService.InputChanged:Connect(function(input)
         if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
             local mouseX = input.Position.X
             local frameX = sliderFrame.AbsolutePosition.X
@@ -330,7 +385,7 @@ local function makeDraggable(gui, handle)
         end
     end)
     
-    game:GetService("UserInputService").InputChanged:Connect(function(input)
+    userInputService.InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             update(input)
         end
@@ -349,6 +404,126 @@ local function loadInfiniteYield()
     if not success then
         warn("Error loading Infinite Yield: " .. tostring(errorMessage))
         showMessage("Infinite Yield Error", Color3.fromRGB(255, 100, 100))
+    end
+end
+
+-- Функция для управления полётом
+local function toggleFly()
+    if noclipActive then
+        -- Выключаем Noclip, если он активен
+        noclipActive = false
+        noclipButton.Text = "Noclip: Off"
+        noclipButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+        -- Включаем коллизию
+        if character then
+            for _, part in pairs(character:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.CanCollide = true
+                end
+            end
+        end
+    end
+
+    if not character or not character:FindFirstChild("HumanoidRootPart") or not humanoid or humanoid.Health <= 0 then
+        showMessage("Cannot Fly: No Character", Color3.fromRGB(255, 100, 100))
+        flyButton.Text = "Fly: Off"
+        flyActive = false
+        return
+    end
+
+    flyActive = not flyActive
+    if flyActive then
+        flyButton.Text = "Fly: On"
+        flyButton.BackgroundColor3 = Color3.fromRGB(120, 120, 255)
+        
+        -- Отключаем гравитацию
+        humanoid.PlatformStand = true
+        
+        -- Создаем BodyVelocity
+        flyVelocity = Instance.new("BodyVelocity")
+        flyVelocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        flyVelocity.Velocity = Vector3.new(0, 0, 0)
+        flyVelocity.Parent = character.HumanoidRootPart
+        
+        -- Создаем BodyGyro
+        flyGyro = Instance.new("BodyGyro")
+        flyGyro.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+        flyGyro.CFrame = character.HumanoidRootPart.CFrame
+        flyGyro.Parent = character.HumanoidRootPart
+        
+        -- Управление полётом
+        userInputService.InputChanged:Connect(function(input)
+            if flyActive and input.UserInputType == Enum.UserInputType.MouseMovement then
+                local camera = workspace.CurrentCamera
+                flyGyro.CFrame = camera.CFrame
+            end
+        end)
+        
+        userInputService.InputBegan:Connect(function(input)
+            if not flyActive then return end
+            local keyCode = input.KeyCode
+            local direction = Vector3.new(0, 0, 0)
+            local camera = workspace.CurrentCamera
+            if keyCode == Enum.KeyCode.W then
+                direction = direction + camera.CFrame.LookVector
+            elseif keyCode == Enum.KeyCode.S then
+                direction = direction - camera.CFrame.LookVector
+            elseif keyCode == Enum.KeyCode.A then
+                direction = direction - camera.CFrame.RightVector
+            elseif keyCode == Enum.KeyCode.D then
+                direction = direction + camera.CFrame.RightVector
+            elseif keyCode == Enum.KeyCode.Space then
+                direction = direction + Vector3.new(0, 1, 0)
+            elseif keyCode == Enum.KeyCode.LeftShift then
+                direction = direction - Vector3.new(0, 1, 0)
+            end
+            flyVelocity.Velocity = direction * flySpeed
+        end)
+        
+        userInputService.InputEnded:Connect(function(input)
+            if not flyActive then return end
+            local keyCode = input.KeyCode
+            if keyCode == Enum.KeyCode.W or keyCode == Enum.KeyCode.S or 
+               keyCode == Enum.KeyCode.A or keyCode == Enum.KeyCode.D or 
+               keyCode == Enum.KeyCode.Space or keyCode == Enum.KeyCode.LeftShift then
+                local direction = Vector3.new(0, 0, 0)
+                if userInputService:IsKeyDown(Enum.KeyCode.W) then
+                    direction = direction + workspace.CurrentCamera.CFrame.LookVector
+                end
+                if userInputService:IsKeyDown(Enum.KeyCode.S) then
+                    direction = direction - workspace.CurrentCamera.CFrame.LookVector
+                end
+                if userInputService:IsKeyDown(Enum.KeyCode.A) then
+                    direction = direction - workspace.CurrentCamera.CFrame.RightVector
+                end
+                if userInputService:IsKeyDown(Enum.KeyCode.D) then
+                    direction = direction + workspace.CurrentCamera.CFrame.RightVector
+                end
+                if userInputService:IsKeyDown(Enum.KeyCode.Space) then
+                    direction = direction + Vector3.new(0, 1, 0)
+                end
+                if userInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+                    direction = direction - Vector3.new(0, 1, 0)
+                end
+                flyVelocity.Velocity = direction * flySpeed
+            end
+        end)
+    else
+        flyButton.Text = "Fly: Off"
+        flyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+        humanoid.PlatformStand = false
+        if flyVelocity then
+            flyVelocity:Destroy()
+            flyVelocity = nil
+        end
+        if flyGyro then
+            flyGyro:Destroy()
+            flyGyro = nil
+        end
     end
 end
 
@@ -381,8 +556,16 @@ makeSlider(jumpSliderFrame, jumpSliderBar, jumpLabel, function(value)
     end
 end, 250)
 
+makeSlider(flySpeedSliderFrame, flySpeedSliderBar, flySpeedLabel, function(value)
+    flySpeed = math.clamp(value, 0, 250)
+end, 250)
+
 -- Обработчик для Noclip
 noclipButton.MouseButton1Click:Connect(function()
+    if flyActive then
+        -- Выключаем Fly, если он активен
+        toggleFly()
+    end
     noclipActive = not noclipActive
     if noclipActive then
         noclipButton.Text = "Noclip: On"
@@ -404,6 +587,11 @@ noclipButton.MouseButton1Click:Connect(function()
             noclipConnection = nil
         end
     end
+end)
+
+-- Обработчик для Fly
+flyButton.MouseButton1Click:Connect(function()
+    toggleFly()
 end)
 
 -- Обработчик для сохранения позиции
@@ -448,12 +636,22 @@ player.CharacterAdded:Connect(function(newChar)
             end
         end)
     end
+    if flyActive then
+        flyActive = false
+        toggleFly() -- Перезапускаем полёт для нового персонажа
+    end
 end)
 
 closeButton.MouseButton1Click:Connect(function()
     screenGui:Destroy()
     if noclipConnection then
         noclipConnection:Disconnect()
+    end
+    if flyVelocity then
+        flyVelocity:Destroy()
+    end
+    if flyGyro then
+        flyGyro:Destroy()
     end
 end)
 
@@ -504,10 +702,12 @@ end
 
 setupHoverEffects(iyButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
 setupHoverEffects(noclipButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
+setupHoverEffects(flyButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
 setupHoverEffects(closeButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
 setupHoverEffects(minimizeButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
 setupHoverEffects(speedSliderBar, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
 setupHoverEffects(jumpSliderBar, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
+setupHoverEffects(flySpeedSliderBar, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
 setupHoverEffects(savePositionButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
 setupHoverEffects(teleportButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
 
@@ -517,7 +717,7 @@ title.MouseEnter:Connect(function()
 end)
 
 title.MouseLeave:Connect(function()
-    if not game:GetService("UserInputService"):IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+    if not userInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
         title.TextColor3 = Color3.fromRGB(255, 255, 255)
     end
 end)
