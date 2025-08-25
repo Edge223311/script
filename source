@@ -1,0 +1,523 @@
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui", 10)
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character and character:WaitForChild("Humanoid", 10)
+
+-- Проверка на наличие необходимых объектов
+if not playerGui or not character or not humanoid then
+    warn("Error: Failed to initialize PlayerGui, Character, or Humanoid")
+    return
+end
+
+-- Создаем основной ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MyGUI"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
+
+-- Создаем основной фрейм
+local mainFrame = Instance.new("Frame")
+local frameWidth, frameHeight = 250, 400
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, frameWidth, 0, frameHeight)
+mainFrame.Position = UDim2.new(0.5, -frameWidth/2, 0.5, -frameHeight/2)
+mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+mainFrame.BorderSizePixel = 0
+mainFrame.Parent = screenGui
+
+-- Скругление углов
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 4)
+corner.Parent = mainFrame
+
+-- Заголовок
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, 0, 0, 24)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Text = "Steal a Anything"
+title.Font = Enum.Font.Roboto
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Left
+local titlePadding = Instance.new("UIPadding")
+titlePadding.PaddingLeft = UDim.new(0, 8)
+titlePadding.Parent = title
+title.Parent = mainFrame
+
+-- Кнопка сворачивания
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Name = "MinimizeButton"
+minimizeButton.Size = UDim2.new(0, 20, 0, 20)
+minimizeButton.Position = UDim2.new(1, -40, 0, 2)
+minimizeButton.AnchorPoint = Vector2.new(1, 0)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+minimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeButton.Text = "-"
+minimizeButton.Font = Enum.Font.Roboto
+minimizeButton.TextSize = 14
+minimizeButton.Parent = mainFrame
+
+-- Кнопка закрытия
+local closeButton = Instance.new("TextButton")
+closeButton.Name = "CloseButton"
+closeButton.Size = UDim2.new(0, 20, 0, 20)
+closeButton.Position = UDim2.new(1, -18, 0, 2)
+closeButton.AnchorPoint = Vector2.new(1, 0)
+closeButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Text = "x"
+closeButton.Font = Enum.Font.Roboto
+closeButton.TextSize = 14
+closeButton.Parent = mainFrame
+
+-- Скругление для кнопок управления
+local controlButtonCorner = Instance.new("UICorner")
+controlButtonCorner.CornerRadius = UDim.new(0, 2)
+controlButtonCorner.Parent = minimizeButton
+
+local controlButtonCorner2 = controlButtonCorner:Clone()
+controlButtonCorner2.Parent = closeButton
+
+-- Кнопка запуска Infinite Yield
+local iyButton = Instance.new("TextButton")
+iyButton.Name = "IYButton"
+iyButton.Size = UDim2.new(0.9, 0, 0, 30)
+iyButton.Position = UDim2.new(0.05, 0, 0.12, 0)
+iyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+iyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+iyButton.Text = "Infinite Yield"
+iyButton.Font = Enum.Font.Roboto
+iyButton.TextSize = 12
+iyButton.Parent = mainFrame
+
+-- Скругление для кнопки Infinite Yield
+local buttonCorner = Instance.new("UICorner")
+buttonCorner.CornerRadius = UDim.new(0, 2)
+buttonCorner.Parent = iyButton
+
+-- Слайдер для скорости
+local speedLabel = Instance.new("TextLabel")
+speedLabel.Name = "SpeedLabel"
+speedLabel.Size = UDim2.new(0.9, 0, 0, 20)
+speedLabel.Position = UDim2.new(0.05, 0, 0.22, 0)
+speedLabel.BackgroundTransparency = 1
+speedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedLabel.Text = "Speed: 16"
+speedLabel.Font = Enum.Font.Roboto
+speedLabel.TextSize = 12
+speedLabel.Parent = mainFrame
+
+local speedSliderFrame = Instance.new("Frame")
+speedSliderFrame.Name = "SpeedSliderFrame"
+speedSliderFrame.Size = UDim2.new(0.9, 0, 0, 10)
+speedSliderFrame.Position = UDim2.new(0.05, 0, 0.27, 0)
+speedSliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+speedSliderFrame.Parent = mainFrame
+
+local speedSliderBar = Instance.new("Frame")
+speedSliderBar.Name = "SpeedSliderBar"
+speedSliderBar.Size = UDim2.new(0.1, 0, 1, 0)
+speedSliderBar.Position = UDim2.new(0.064, 0, 0, 0)
+speedSliderBar.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+speedSliderBar.Parent = speedSliderFrame
+
+local speedSliderCorner = Instance.new("UICorner")
+speedSliderCorner.CornerRadius = UDim.new(0, 2)
+speedSliderCorner.Parent = speedSliderFrame
+
+local speedSliderBarCorner = Instance.new("UICorner")
+speedSliderBarCorner.CornerRadius = UDim.new(0, 2)
+speedSliderBarCorner.Parent = speedSliderBar
+
+-- Слайдер для высоты прыжка
+local jumpLabel = Instance.new("TextLabel")
+jumpLabel.Name = "JumpLabel"
+jumpLabel.Size = UDim2.new(0.9, 0, 0, 20)
+jumpLabel.Position = UDim2.new(0.05, 0, 0.35, 0)
+jumpLabel.BackgroundTransparency = 1
+jumpLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+jumpLabel.Text = "Jump: 50"
+jumpLabel.Font = Enum.Font.Roboto
+jumpLabel.TextSize = 12
+jumpLabel.Parent = mainFrame
+
+local jumpSliderFrame = Instance.new("Frame")
+jumpSliderFrame.Name = "JumpSliderFrame"
+jumpSliderFrame.Size = UDim2.new(0.9, 0, 0, 10)
+jumpSliderFrame.Position = UDim2.new(0.05, 0, 0.4, 0)
+jumpSliderFrame.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+jumpSliderFrame.Parent = mainFrame
+
+local jumpSliderBar = Instance.new("Frame")
+jumpSliderBar.Name = "JumpSliderBar"
+jumpSliderBar.Size = UDim2.new(0.2, 0, 1, 0)
+jumpSliderBar.Position = UDim2.new(0.2, 0, 0, 0)
+jumpSliderBar.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+jumpSliderBar.Parent = jumpSliderFrame
+
+local jumpSliderCorner = Instance.new("UICorner")
+jumpSliderCorner.CornerRadius = UDim.new(0, 2)
+jumpSliderCorner.Parent = jumpSliderFrame
+
+local jumpSliderBarCorner = Instance.new("UICorner")
+jumpSliderBarCorner.CornerRadius = UDim.new(0, 2)
+jumpSliderBarCorner.Parent = jumpSliderBar
+
+-- Кнопка Noclip
+local noclipButton = Instance.new("TextButton")
+noclipButton.Name = "NoclipButton"
+noclipButton.Size = UDim2.new(0.9, 0, 0, 30)
+noclipButton.Position = UDim2.new(0.05, 0, 0.48, 0)
+noclipButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+noclipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+noclipButton.Text = "Noclip: Off"
+noclipButton.Font = Enum.Font.Roboto
+noclipButton.TextSize = 12
+noclipButton.Parent = mainFrame
+
+local noclipCorner = Instance.new("UICorner")
+noclipCorner.CornerRadius = UDim.new(0, 2)
+noclipCorner.Parent = noclipButton
+
+-- Кнопка сохранения позиции
+local savePositionButton = Instance.new("TextButton")
+savePositionButton.Name = "SavePositionButton"
+savePositionButton.Size = UDim2.new(0.9, 0, 0, 30)
+savePositionButton.Position = UDim2.new(0.05, 0, 0.58, 0)
+savePositionButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+savePositionButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+savePositionButton.Text = "Save Position"
+savePositionButton.Font = Enum.Font.Roboto
+savePositionButton.TextSize = 12
+savePositionButton.Parent = mainFrame
+
+local savePositionCorner = Instance.new("UICorner")
+savePositionCorner.CornerRadius = UDim.new(0, 2)
+savePositionCorner.Parent = savePositionButton
+
+-- Кнопка телепорта
+local teleportButton = Instance.new("TextButton")
+teleportButton.Name = "TeleportButton"
+teleportButton.Size = UDim2.new(0.9, 0, 0, 30)
+teleportButton.Position = UDim2.new(0.05, 0, 0.66, 0)
+teleportButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+teleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+teleportButton.Text = "Teleport to Saved"
+teleportButton.Font = Enum.Font.Roboto
+teleportButton.TextSize = 12
+teleportButton.Parent = mainFrame
+
+local teleportCorner = Instance.new("UICorner")
+teleportCorner.CornerRadius = UDim.new(0, 2)
+teleportCorner.Parent = teleportButton
+
+-- Водяной знак
+local watermark = Instance.new("TextLabel")
+watermark.Name = "Watermark"
+watermark.Size = UDim2.new(0.9, 0, 0, 20)
+watermark.Position = UDim2.new(0.05, 0, 0.92, 0)
+watermark.BackgroundTransparency = 1
+watermark.TextColor3 = Color3.fromRGB(255, 255, 255)
+watermark.TextTransparency = 0.5
+watermark.Text = "Nafan"
+watermark.Font = Enum.Font.Roboto
+watermark.TextSize = 12
+watermark.TextXAlignment = Enum.TextXAlignment.Center
+watermark.Parent = mainFrame
+
+local noclipActive = false
+local noclipConnection
+local savedPosition = nil
+
+-- Информационный текст
+local infoText = Instance.new("TextLabel")
+infoText.Name = "InfoText"
+infoText.Size = UDim2.new(0.9, 0, 0, 20)
+infoText.Position = UDim2.new(0.05, 0, 0.84, 0)
+infoText.BackgroundTransparency = 1
+infoText.TextColor3 = Color3.fromRGB(200, 200, 200)
+infoText.Text = "Drag the title"
+infoText.Font = Enum.Font.Roboto
+infoText.TextSize = 12
+infoText.TextWrapped = true
+infoText.Parent = mainFrame
+
+-- Функция для отображения временных сообщений
+local function showMessage(text, color)
+    local message = Instance.new("TextLabel")
+    message.Name = "TempMessage"
+    message.Size = UDim2.new(0.9, 0, 0, 20)
+    message.Position = UDim2.new(0.05, 0, 0.76, 0)
+    message.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+    message.TextColor3 = color or Color3.fromRGB(255, 255, 255)
+    message.Text = text
+    message.Font = Enum.Font.Roboto
+    message.TextSize = 12
+    message.TextWrapped = true
+    message.Parent = mainFrame
+    
+    task.spawn(function()
+        task.wait(3)
+        if message and message.Parent then
+            message:Destroy()
+        end
+    end)
+end
+
+-- Функция для создания слайдера
+local function makeSlider(sliderFrame, sliderBar, valueLabel, applyFunction, maxValue)
+    local dragging = false
+    local minValue = 0
+    sliderBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+        end
+    end)
+    
+    sliderBar.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = false
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local mouseX = input.Position.X
+            local frameX = sliderFrame.AbsolutePosition.X
+            local frameWidth = sliderFrame.AbsoluteSize.X
+            local relativeX = math.clamp((mouseX - frameX) / frameWidth, 0, 1)
+            sliderBar.Position = UDim2.new(relativeX, 0, 0, 0)
+            local value = math.floor(minValue + (maxValue - minValue) * relativeX)
+            valueLabel.Text = valueLabel.Text:match("^[^:]+") .. ": " .. value
+            applyFunction(value)
+        end
+    end)
+end
+
+-- Функция для перемещения GUI
+local function makeDraggable(gui, handle)
+    local dragging = false
+    local dragInput, dragStart, startPos
+    
+    local function update(input)
+        local delta = input.Position - dragStart
+        gui.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+    
+    handle.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = gui.Position
+            
+            handle.TextColor3 = Color3.fromRGB(200, 200, 200)
+            
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                    handle.TextColor3 = Color3.fromRGB(255, 255, 255)
+                end
+            end)
+        end
+    end)
+    
+    handle.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            update(input)
+        end
+    end)
+end
+
+-- Делаем заголовок перемещаемым
+makeDraggable(mainFrame, title)
+
+-- Функция для запуска Infinite Yield
+local function loadInfiniteYield()
+    local success, errorMessage = pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"))()
+    end)
+    
+    if not success then
+        warn("Error loading Infinite Yield: " .. tostring(errorMessage))
+        showMessage("Infinite Yield Error", Color3.fromRGB(255, 100, 100))
+    end
+end
+
+-- Обработчики событий для кнопок
+iyButton.MouseButton1Click:Connect(function()
+    iyButton.Text = "Loading..."
+    iyButton.BackgroundColor3 = Color3.fromRGB(120, 120, 255)
+    
+    loadInfiniteYield()
+    
+    task.spawn(function()
+        task.wait(1)
+        if iyButton and iyButton.Parent then
+            iyButton.Text = "Infinite Yield"
+            iyButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+        end
+    end)
+end)
+
+-- Инициализация слайдеров
+makeSlider(speedSliderFrame, speedSliderBar, speedLabel, function(value)
+    if humanoid then
+        humanoid.WalkSpeed = math.clamp(value, 0, 250)
+    end
+end, 250)
+
+makeSlider(jumpSliderFrame, jumpSliderBar, jumpLabel, function(value)
+    if humanoid then
+        humanoid.JumpPower = math.clamp(value, 0, 250)
+    end
+end, 250)
+
+-- Обработчик для Noclip
+noclipButton.MouseButton1Click:Connect(function()
+    noclipActive = not noclipActive
+    if noclipActive then
+        noclipButton.Text = "Noclip: On"
+        noclipButton.BackgroundColor3 = Color3.fromRGB(120, 120, 255)
+        noclipConnection = game:GetService("RunService").Stepped:Connect(function()
+            if character then
+                for _, part in pairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    else
+        noclipButton.Text = "Noclip: Off"
+        noclipButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+    end
+end)
+
+-- Обработчик для сохранения позиции
+savePositionButton.MouseButton1Click:Connect(function()
+    if character and character:FindFirstChild("HumanoidRootPart") and humanoid and humanoid.Health > 0 then
+        savedPosition = character.HumanoidRootPart.CFrame
+        showMessage("Position Saved", Color3.fromRGB(100, 255, 100))
+    else
+        showMessage("Cannot Save: No Character", Color3.fromRGB(255, 100, 100))
+    end
+end)
+
+-- Обработчик для телепорта
+teleportButton.MouseButton1Click:Connect(function()
+    if not savedPosition then
+        showMessage("No Position Saved", Color3.fromRGB(255, 100, 100))
+        return
+    end
+    if character and character:FindFirstChild("HumanoidRootPart") and humanoid and humanoid.Health > 0 then
+        character.HumanoidRootPart.CFrame = savedPosition
+        showMessage("Teleported", Color3.fromRGB(100, 255, 100))
+    else
+        showMessage("Cannot Teleport: No Character", Color3.fromRGB(255, 100, 100))
+    end
+end)
+
+-- Обработчик респауна персонажа
+player.CharacterAdded:Connect(function(newChar)
+    character = newChar
+    humanoid = newChar:WaitForChild("Humanoid", 10)
+    if noclipActive then
+        if noclipConnection then
+            noclipConnection:Disconnect()
+        end
+        noclipConnection = game:GetService("RunService").Stepped:Connect(function()
+            if character then
+                for _, part in pairs(character:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end)
+    end
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+    if noclipConnection then
+        noclipConnection:Disconnect()
+    end
+end)
+
+minimizeButton.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    
+    local restoreButton = Instance.new("TextButton")
+    restoreButton.Name = "RestoreButton"
+    restoreButton.Size = UDim2.new(0, 40, 0, 40)
+    restoreButton.Position = UDim2.new(0, 10, 0, 10)
+    restoreButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+    restoreButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    restoreButton.Text = "↺"
+    restoreButton.Font = Enum.Font.Roboto
+    restoreButton.TextSize = 14
+    restoreButton.Parent = screenGui
+    
+    local restoreCorner = Instance.new("UICorner")
+    restoreCorner.CornerRadius = UDim.new(0, 2)
+    restoreCorner.Parent = restoreButton
+    
+    restoreButton.MouseEnter:Connect(function()
+        restoreButton.BackgroundColor3 = Color3.fromRGB(120, 120, 255)
+    end)
+    
+    restoreButton.MouseLeave:Connect(function()
+        restoreButton.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+    end)
+    
+    makeDraggable(restoreButton, restoreButton)
+    
+    restoreButton.MouseButton1Click:Connect(function()
+        mainFrame.Visible = true
+        restoreButton:Destroy()
+    end)
+end)
+
+-- Эффекты при наведении
+local function setupHoverEffects(button, normalColor, hoverColor)
+    button.MouseEnter:Connect(function()
+        button.BackgroundColor3 = hoverColor
+    end)
+    
+    button.MouseLeave:Connect(function()
+        button.BackgroundColor3 = normalColor
+    end)
+end
+
+setupHoverEffects(iyButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
+setupHoverEffects(noclipButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
+setupHoverEffects(closeButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
+setupHoverEffects(minimizeButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
+setupHoverEffects(speedSliderBar, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
+setupHoverEffects(jumpSliderBar, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
+setupHoverEffects(savePositionButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
+setupHoverEffects(teleportButton, Color3.fromRGB(100, 100, 255), Color3.fromRGB(120, 120, 255))
+
+-- Эффект при наведении на заголовок
+title.MouseEnter:Connect(function()
+    title.TextColor3 = Color3.fromRGB(200, 200, 200)
+end)
+
+title.MouseLeave:Connect(function()
+    if not game:GetService("UserInputService"):IsMouseButtonPressed(Enum.UserInputType.MouseButton1) then
+        title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    end
+end)
